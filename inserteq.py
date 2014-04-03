@@ -69,10 +69,13 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
 
     def on_done(self, txt):
         url = self.get_url(txt)
-        img = getattr(self, 'to_%s' % self.convert_to, self.to_text)(txt, url)
-        self.window.run_command("close")
-        self.view.run_command("insert", {"characters": img})
-        os.remove(self.preview_file)
+        if self.convert_to == "clipboard":
+            sublime.set_clipboard(url)
+        else:
+            img = getattr(self, 'to_%s' % self.convert_to, self.to_text)(txt, url)
+            self.window.run_command("close")
+            self.view.run_command("insert", {"characters": img})
+            os.remove(self.preview_file)
 
     def run(self, e, renderer=None, slurp=True, convert_to="auto"):
         self.busy = False
