@@ -1,3 +1,8 @@
 [
-    {"caption": "Insert Equation as Image", "command": "insert_equation"}
+    {
+        "caption": "Insert Equation as Image",
+        // Uncomment for alternative renderer
+        // "args": {"renderer": "http://chart.googleapis.com/chart?cht=tx&chl={query}"},
+        "command": "insert_equation"
+    },
 ]
