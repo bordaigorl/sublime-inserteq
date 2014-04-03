@@ -13,16 +13,6 @@ EMPTYGIF = b"""\
 \xff\xff\xff\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\
 \x01\x00\x01\x00\x00\x02\x01\x44\x00\x3b"""
 
-conversion = {
-    "markdown": '![{alt}]({url})',
-    "html": '<img alt="{alt}" src="{url}" />',
-    "text": '{url}',
-    "source": '"{url}"'
-}
-# TODO: add escape chars for each conversion
-# TODO: use `conversion` replacing alt and url with regexes so you can match back their values on the current line
-# TODO: usa same trick to match all formulas in current view
-
 
 def find_syntax(lang, default=None):
     res = sublime.find_resources("%s.*Language" % lang)
@@ -43,6 +33,25 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
         self.window.run_command("close")
         os.remove(self.preview_file)
 
+    def to_markdown(self, alt, url):
+        for ch in ['\\', '_', '*', '`']:
+            alt = alt.replace(ch, "\\"+ch)
+        # not storing alt in `alt` attribute since not all markdown converters
+        # handle special symbols well in it.
+        return '![formula]({url} "{alt}")'.format(alt=alt, url=url)
+
+    def to_html(self, alt, url):
+        alt = alt.replace("<", "&lt;")
+        alt = alt.replace(">", "&gt;")
+        alt = alt.replace("&", "&amp;")
+        return '<img alt="{alt}" src="{url}" />'.format(alt=alt, url=url)
+
+    def to_text(self, alt, url):
+        return url
+
+    def to_source(self, alt, url):
+        return '"%s"' % url
+
     def on_change(self, txt):
         if self.busy:
             return
@@ -60,11 +69,7 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
 
     def on_done(self, txt):
         url = self.get_url(txt)
-        print(self.convert_to)
-        if self.convert_to in conversion:
-            img = conversion[self.convert_to].format(alt=txt, url=url)
-        else:
-            img = url
+        img = getattr(self, 'to_%s' % self.convert_to, self.to_text)(txt, url)
         self.window.run_command("close")
         self.view.run_command("insert", {"characters": img})
         os.remove(self.preview_file)
@@ -78,7 +83,7 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
                 convert_to = "markdown"
             else:
                 convert_to = syntax[min(len(syntax)-1, 1)]
-            if convert_to not in conversion:
+            if not hasattr(self, "to_%s" % convert_to):
                 convert_to = syntax[0]
         self.convert_to = convert_to
 
