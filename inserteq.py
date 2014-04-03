@@ -46,6 +46,9 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
         alt = alt.replace("&", "&amp;")
         return '<img alt="{alt}" src="{url}" />'.format(alt=alt, url=url)
 
+    def to_tex(self, alt, url):
+        return "$%s$" % alt
+
     def to_text(self, alt, url):
         return url
 
