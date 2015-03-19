@@ -25,12 +25,20 @@ def find_syntax(lang, default=None):
 class InsertEquationCommand(sublime_plugin.TextCommand):
 
     url = "http://latex.codecogs.com/gif.latex?{query}"
+    preview = None
 
     def get_url(self, query):
         return self.url.format(query=urlquote(query))
 
+    def close_preview(self):
+        # self.preview.close() does not work for transient views
+        # nor does .id(), buffer_id(), file_name()
+        # so just to prevent closing other views we check active view is None
+        if self.window.active_view() is None and len(self.window.views()) > 0:
+            self.window.run_command("close")
+
     def on_cancel(self):
-        self.window.run_command("close")
+        self.close_preview()
         os.remove(self.preview_file)
 
     def to_markdown(self, alt, url):
@@ -76,7 +84,7 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
             sublime.set_clipboard(url)
         else:
             img = getattr(self, 'to_%s' % self.convert_to, self.to_text)(txt, url)
-            self.window.run_command("close")
+            self.close_preview()
             self.view.run_command("insert", {"characters": img})
             os.remove(self.preview_file)
 
