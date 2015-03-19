@@ -46,22 +46,22 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
             alt = alt.replace(ch, "\\"+ch)
         # not storing alt in `alt` attribute since not all markdown converters
         # handle special symbols well in it.
-        return '![formula]({url} "{alt}")'.format(alt=alt, url=url)
+        return '![${{1:formula}}]({url} "${{2:{alt}}}")'.format(alt=alt, url=url)
 
     def to_html(self, alt, url):
         alt = alt.replace("<", "&lt;")
         alt = alt.replace(">", "&gt;")
         alt = alt.replace("&", "&amp;")
-        return '<img alt="{alt}" src="{url}" />'.format(alt=alt, url=url)
+        return '<img alt="${{2:{alt}}}" src="{url}" />'.format(alt=alt, url=url)
 
     def to_tex(self, alt, url):
-        return "$%s$" % alt
+        return "\$${1:%s}\$" % alt
 
     def to_text(self, alt, url):
         return url
 
     def to_source(self, alt, url):
-        return '"%s"' % url
+        return '"${1:%s}"' % url
 
     def on_change(self, txt):
         if self.busy:
@@ -85,7 +85,7 @@ class InsertEquationCommand(sublime_plugin.TextCommand):
         else:
             img = getattr(self, 'to_%s' % self.convert_to, self.to_text)(txt, url)
             self.close_preview()
-            self.view.run_command("insert", {"characters": img})
+            self.view.run_command("insert_snippet", {"contents": img})
             os.remove(self.preview_file)
 
     def run(self, e, renderer=None, slurp=True, convert_to="auto"):
